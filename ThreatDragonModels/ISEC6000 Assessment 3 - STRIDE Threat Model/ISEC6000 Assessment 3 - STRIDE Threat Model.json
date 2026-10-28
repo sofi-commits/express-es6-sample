@@ -1,0 +1,33 @@
+{
+  "version": "2.6.2",
+  "release_version": "1.0",
+  "released_at": "2026-10-28",
+  "summary": {
+    "title": "ISEC6000 Assessment 3 - STRIDE Threat Model",
+    "owner": "Muhammad Sofian Shafqat",
+    "description": "Threat model for the Express-ES6-Sample application deployed via AWS CodePipeline to Elastic Beanstalk (ISEC6000 Assessment 3, Task 5). Covers three components: the Web Application (Express.js/Node.js app), the Database (PostgreSQL instances used by NextCloud and Clair in this assessment), and the User Interface (browser client accessing the deployed app).",
+    "id": 0
+  },
+  "detail": {
+    "contributors": [
+      {
+        "name": "sofi"
+      }
+    ],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "Express App - Web, Database, UI Data Flow",
+        "diagramType": "STRIDE",
+        "placeholder": "New STRIDE diagram description",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.6.2",
+        "cells": [],
+        "description": "Data flow diagram covering the Web Application, Database, and User Interface components for the Express-ES6-Sample app deployment"
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "",
+    "threatTop": 0
+  }
+}
