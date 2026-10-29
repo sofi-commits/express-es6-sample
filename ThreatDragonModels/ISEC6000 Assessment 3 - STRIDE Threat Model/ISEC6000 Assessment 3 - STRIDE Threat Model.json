@@ -70,8 +70,8 @@
                 "text": "User (Browser / UI)"
               },
               "body": {
-                "stroke": "#333333",
-                "strokeWidth": 1.5,
+                "stroke": "red",
+                "strokeWidth": 2.5,
                 "strokeDasharray": null
               }
             },
@@ -168,9 +168,40 @@
               "isTrustBoundary": false,
               "outOfScope": false,
               "reasonOutOfScope": "",
-              "hasOpenThreats": false,
+              "hasOpenThreats": true,
               "providesAuthentication": false,
-              "threats": []
+              "threats": [
+                {
+                  "id": "d09c984b-8c25-4d39-9d32-56d6be8a362d",
+                  "title": "Identity Spoofing via Session Hijacking",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "An attacker intercepts or steals a user's session cookie/token (e.g. via network sniffing on an unencrypted connection, a cross-site scripting attack, or a man-in-the-middle attack) and impersonates the legitimate user to the Web Application, gaining unauthorized access to their session.",
+                  "mitigation": "Enforce HTTPS/TLS for all traffic between the User and the Web Application (note: the current Elastic Beanstalk demo URL serves plain HTTP - production deployment should attach an SSL/TLS certificate via AWS Certificate Manager and an HTTPS listener on the load balancer). Use secure, HttpOnly, SameSite cookies for session tokens. Implement session expiry and token rotation.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 1,
+                  "score": ""
+                },
+                {
+                  "id": "a7f533de-5e38-4414-be6d-cc30044b59dd",
+                  "title": "User Denies Performing an Action",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Repudiation",
+                  "description": "A user could deny having submitted a particular request to the Web Application, and without server-side logging there is no reliable record to prove or disprove the claim.",
+                  "mitigation": "Implement server-side request logging on the Web Application (timestamp, source IP, session/user identifier, action performed). Use Elastic Beanstalk's environment logs / AWS CloudWatch Logs to maintain a non-repudiable audit trail of all requests reaching the application.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 2,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 1,
+                "repudiation": 1
+              }
             }
           },
           {
@@ -187,8 +218,8 @@
                 "text": "Web Application (Express.js on Elastic Beanstalk)"
               },
               "body": {
-                "stroke": "#333333",
-                "strokeWidth": 1.5,
+                "stroke": "red",
+                "strokeWidth": 2.5,
                 "strokeDasharray": null
               }
             },
@@ -285,12 +316,99 @@
               "outOfScope": false,
               "isTrustBoundary": false,
               "reasonOutOfScope": "",
-              "hasOpenThreats": false,
+              "hasOpenThreats": true,
               "handlesCardPayment": false,
               "handlesGoodsOrServices": false,
               "isWebApplication": false,
               "privilegeLevel": "",
-              "threats": []
+              "threats": [
+                {
+                  "id": "61f82980-2801-41ae-82d9-66658ff182dd",
+                  "title": "Spoofed Requests to the Web Application",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Spoofing",
+                  "description": "An attacker could send forged HTTP requests to the Web Application impersonating a legitimate client, or could spoof the application's own identity (e.g. a phishing site mimicking the Elastic Beanstalk domain) to trick users into sending credentials to a fake endpoint.",
+                  "mitigation": "Serve the application over HTTPS/TLS with a valid certificate (via AWS Certificate Manager and a load balancer) so clients can verify the Web Application's identity. Avoid exposing the raw Elastic Beanstalk subdomain in production; use a custom domain with proper certificate pinning where possible.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 4,
+                  "score": ""
+                },
+                {
+                  "id": "d5c034bb-0f8f-46bf-a4d1-1b86a18a24da",
+                  "title": "Tampering with Request Data or Application Code",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "An attacker could tamper with HTTP request parameters/body in transit (if not using TLS) to inject malicious input into the Express route handlers, or could tamper with the deployed application artifact itself (e.g. compromising the CodePipeline build/deploy process to inject malicious code before it reaches Elastic Beanstalk).",
+                  "mitigation": "Enforce HTTPS/TLS to protect data in transit. Apply input validation/sanitization on all route handlers (e.g. using express-validator). Restrict IAM permissions on the CodePipeline/CodeBuild service roles to least privilege, enable AWS CloudTrail logging on the pipeline, and require code review/branch protection on the GitHub repository before merges to the deployed branch.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 5,
+                  "score": ""
+                },
+                {
+                  "id": "7cd734ce-0db8-47b6-922f-6a40d8cfbfd0",
+                  "title": "Lack of Audit Trail for Application Actions",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Repudiation",
+                  "description": "The Web Application currently has no application-level logging of requests or actions, so if a malicious or erroneous request occurs, there is no record to attribute it to a specific source or to reconstruct what happened.",
+                  "mitigation": "Add structured request logging middleware (e.g. morgan, already a dependency in package.json) configured to write to a persistent, tamper-evident location. Forward Elastic Beanstalk/EC2 instance logs to AWS CloudWatch Logs with retention enabled, so logs survive instance termination and redeployment.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 6,
+                  "score": ""
+                },
+                {
+                  "id": "895c1ebf-b556-45a8-bd01-fd2cfe04eb76",
+                  "title": "Sensitive Data Exposure via Unencrypted Traffic or Error Messages",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Information disclosure",
+                  "description": "The deployed Elastic Beanstalk environment currently serves traffic over plain HTTP, so any data exchanged between the User and the Web Application (including future session tokens or form data) is visible to anyone who can observe the network path. Additionally, verbose Express error messages or stack traces could leak internal implementation details (file paths, dependency versions) to an attacker if NODE_ENV is not set to production correctly.",
+                  "mitigation": "Enable HTTPS/TLS on the Elastic Beanstalk load balancer via AWS Certificate Manager. Ensure NODE_ENV=production is set so Express suppresses detailed stack traces in responses. Avoid returning raw error objects to clients; use a generic error-handling middleware that logs details server-side only.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 7,
+                  "score": ""
+                },
+                {
+                  "id": "10e6de30-30fa-4171-bb12-5a90579adc40",
+                  "title": "Resource Exhaustion on Single-Instance Environment",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Denial of service",
+                  "description": "The Elastic Beanstalk environment is configured as a single-instance deployment with no auto-scaling or load balancer. A flood of requests (malicious or accidental) could exhaust the instance's CPU/memory/connections, making the application unavailable to legitimate users, with no redundant instance to take over.",
+                  "mitigation": "Configure Elastic Beanstalk with an Auto Scaling group (minimum 2 instances) behind an Application Load Balancer instead of single-instance mode. Enable AWS Shield Standard (on by default) and consider AWS WAF rate-based rules to throttle abusive request patterns. Set appropriate request body size limits in Express to prevent oversized payload attacks.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 8,
+                  "score": ""
+                },
+                {
+                  "id": "d18141a9-81bb-4c1a-80a2-6293b79a0926",
+                  "title": "Overly Broad IAM Permissions on Pipeline/Deploy Roles",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Elevation of privilege",
+                  "description": "The CodePipeline service role currently has the broad AdministratorAccess-AWSElasticBeanstalk policy attached (applied to fix a permissions error during setup). If this role or its credentials were compromised, an attacker could use it to perform unauthorized actions across Elastic Beanstalk-related resources beyond what the pipeline strictly needs, effectively elevating privilege within the AWS account.",
+                  "mitigation": "Replace the broad managed policy with a least-privilege custom IAM policy scoped only to the specific Elastic Beanstalk application/environment, CodeBuild project, and S3 artifact bucket this pipeline uses. Regularly audit IAM policies attached to service roles using AWS IAM Access Analyzer.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 9,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 1,
+                "tampering": 1,
+                "repudiation": 1,
+                "informationDisclosure": 1,
+                "denialOfService": 1,
+                "elevationOfPrivilege": 1
+              }
             }
           },
           {
@@ -307,11 +425,13 @@
                 "text": "Database (PostgreSQL)"
               },
               "topLine": {
-                "strokeWidth": 1.5,
+                "stroke": "red",
+                "strokeWidth": 2.5,
                 "strokeDasharray": null
               },
               "bottomLine": {
-                "strokeWidth": 1.5,
+                "stroke": "red",
+                "strokeWidth": 2.5,
                 "strokeDasharray": null
               }
             },
@@ -408,13 +528,79 @@
               "outOfScope": false,
               "isTrustBoundary": false,
               "reasonOutOfScope": "",
-              "hasOpenThreats": false,
+              "hasOpenThreats": true,
               "isALog": false,
               "isEncrypted": false,
               "isSigned": false,
               "storesCredentials": false,
               "storesInventory": false,
-              "threats": []
+              "threats": [
+                {
+                  "id": "cdb13d88-76a6-4b7a-85e7-b22fe35059af",
+                  "title": "Unauthorized Modification of Database Records",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "If an attacker gains access to the PostgreSQL database (e.g. via a SQL injection vulnerability in the Web Application, or weak database credentials), they could tamper with stored data - modifying, corrupting, or deleting records without authorization.",
+                  "mitigation": "Use parameterized queries/an ORM to prevent SQL injection in the Web Application. Store database credentials securely (e.g. AWS Secrets Manager rather than plaintext environment variables in compose files). Restrict database network access to only the application tier (no public exposure), and enable regular automated backups so tampered data can be restored.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 10,
+                  "score": ""
+                },
+                {
+                  "id": "83d820ac-ff10-4164-a2cd-364592c15c6a",
+                  "title": "No Record of Who Made Database Changes",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Repudiation",
+                  "description": "The PostgreSQL database does not currently have query/change auditing enabled. If a record is altered or deleted, there is no way to determine which user, session, or process was responsible.",
+                  "mitigation": "Enable PostgreSQL's logging options (log_statement, log_connections) or use an extension such as pgAudit to record who executed which queries and when. Ensure the Web Application always queries the database using distinct, traceable credentials per service rather than a single shared account.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 11,
+                  "score": ""
+                },
+                {
+                  "id": "ddca1242-7979-4036-82b6-98712d81528a",
+                  "title": "Database Credentials and Data Exposed via Weak Configuration",
+                  "status": "Open",
+                  "severity": "Critical",
+                  "type": "Information disclosure",
+                  "description": "Database credentials (username/password) are currently stored in plaintext environment variables inside the Docker Compose files used in this assessment (e.g. POSTGRES_PASSWORD=nextcloud), rather than a secrets manager. If the compose file, container environment, or host is exposed, an attacker gains direct credentials to the database and could exfiltrate all stored data.",
+                  "mitigation": "Use AWS Secrets Manager or Docker secrets to inject database credentials at runtime instead of hardcoding them in compose.yaml. Rotate credentials regularly. Ensure the database is never exposed on a published host port (use `expose` rather than `ports`, as already correctly done for the NextCloud db service) so it is reachable only from application containers on the same Docker network, never from the public internet.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 12,
+                  "score": ""
+                },
+                {
+                  "id": "756308cc-3372-452e-99e1-485c7aa7903b",
+                  "title": "Database Overload from Unbounded Connections",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Denial of service",
+                  "description": "The PostgreSQL container has no connection limit or resource constraints configured. A surge of connections from the Web Application (e.g. under load, or from a connection-leak bug) or a direct attack could exhaust the database's available connections/memory, denying service to legitimate application requests.",
+                  "mitigation": "Set max_connections appropriately in PostgreSQL configuration and configure Docker resource limits (cpus, mem_limit) on the postgres service. Use connection pooling (e.g. pgBouncer) between the Web Application and the database. Ensure the healthcheck + service_healthy dependency pattern (already used in Task 3/4) is applied here too, so dependent services don't hammer the database with retries during startup or recovery.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 13,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "tampering": 1,
+                "repudiation": 1,
+                "informationDisclosure": 1,
+                "denialOfService": 1
+              }
+            },
+            "tools": {
+              "items": [
+                "boundary",
+                "button-remove"
+              ],
+              "name": null
             }
           },
           {
@@ -615,6 +801,6 @@
     ],
     "diagramTop": 1,
     "reviewer": "",
-    "threatTop": 0
+    "threatTop": 13
   }
 }
